@@ -749,6 +749,19 @@ define(function(require) {
             });
         });
 
+        describe('#hasCapability', function() {
+            it('should detect existing capability', function() {
+                br.capability = ['ZZZ'];
+                expect(br.hasCapability('zzz')).to.be.true;
+            });
+
+            it('should detect non existing capability', function() {
+                br.capability = ['ZZZ'];
+                expect(br.hasCapability('ooo')).to.be.false;
+                expect(br.hasCapability()).to.be.false;
+            });
+        });
+
         describe('#_untaggedOkHandler', function() {
             it('should update capability if present', function() {
                 br._untaggedOkHandler({

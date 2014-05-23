@@ -947,6 +947,10 @@
         }.bind(this));
     };
 
+    BrowserBox.prototype.hasCapability = function(capa) {
+        return this.capability.indexOf((capa || '').toString().toUpperCase().trim()) >= 0;
+    };
+
     // Default handlers for untagged responses
 
     /**
