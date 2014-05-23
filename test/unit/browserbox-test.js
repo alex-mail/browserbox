@@ -713,6 +713,40 @@ define(function(require) {
                 br.exec.restore();
                 br._parseSELECT.restore();
             });
+
+            it('should emit onselectmailbox', function(done) {
+                sinon.stub(br, 'exec', function(command, untagged, callback) {
+                    callback(null, 'abc', done);
+                });
+                sinon.stub(br, '_parseSELECT').returns('def');
+                sinon.stub(br, 'onselectmailbox');
+
+                br.selectMailbox('[Gmail]/Trash', function() {});
+
+                expect(br._parseSELECT.withArgs('abc').callCount).to.equal(1);
+                expect(br.onselectmailbox.withArgs('[Gmail]/Trash', 'def').callCount).to.equal(1);
+
+                br.exec.restore();
+                br._parseSELECT.restore();
+                br.onselectmailbox.restore();
+            });
+
+            it('should emit onclosemailbox', function(done) {
+                sinon.stub(br, 'exec', function(command, untagged, callback) {
+                    callback(null, 'abc', done);
+                });
+                sinon.stub(br, '_parseSELECT').returns('def');
+                sinon.stub(br, 'onclosemailbox');
+
+                br.selectedMailbox = 'yyy';
+                br.selectMailbox('[Gmail]/Trash', function() {});
+
+                expect(br.onclosemailbox.withArgs('yyy').callCount).to.equal(1);
+
+                br.exec.restore();
+                br._parseSELECT.restore();
+                br.onclosemailbox.restore();
+            });
         });
 
         describe('#_untaggedOkHandler', function() {
@@ -1461,6 +1495,26 @@ define(function(require) {
                 });
             });
 
+        });
+
+        describe('#_changeState', function() {
+            it('should set the state value', function() {
+                br._changeState(12345);
+
+                expect(br.state).to.equal(12345);
+            });
+
+            it('should emit onclosemailbox if mailbox was closed', function() {
+                sinon.stub(br, 'onclosemailbox');
+                br.state = br.STATE_SELECTED;
+                br.selectedMailbox = 'aaa';
+
+                br._changeState(12345);
+
+                expect(br.selectedMailbox).to.be.false;
+                expect(br.onclosemailbox.withArgs('aaa').callCount).to.equal(1);
+                br.onclosemailbox.restore();
+            });
         });
 
         describe('#_ensurePath', function() {

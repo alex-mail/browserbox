@@ -285,6 +285,13 @@ client.selectMailbox('INBOX', function(err, mailbox){
 }
 ```
 
+You can check the currently selected mailbox path from `client.selectedMailbox`.
+If no mailbox is currently selected, the value is `false`.
+
+```
+console.log('Current mailbox: %s', client.selectedMailbox);
+```
+
 ## List messages
 
 List messages with `listMessages()`
@@ -627,6 +634,27 @@ Possible types:
   * **exists** is emitted on untagged `EXISTS` response, `value` is the argument number used
   * **expunge** is emitted on untagged `EXPUNGE` response, `value` is the sequence number of the deleted message
   * **fetch** is emitted on flag change. `value` includes the parsed message object (probably includes only the sequence number `#` and `flags` array)
+
+## Mailbox change notifications
+
+Listening mailbox select notification is done by setting the `onselectmailbox` and `onclosemailbox` handlers.
+
+For `onselectmailbox` handler the first argument is the path of the selected mailbox and the second argument
+is the mailbox information object (see [selectMailbox](#select-mailbox)).
+
+For `onclosemailbox` handler the argument is the path of the selected mailbox.
+
+**Example**
+
+```javascript
+client.onselectmailbox = function(path, mailbox){
+    console.log('Opened %s with %s messages', path, mailbox.exists);
+}
+
+client.onclosemailbox = function(path){
+    console.log('Closed %s', path);
+}
+```
 
 ## Close connection
 

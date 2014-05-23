@@ -68,6 +68,11 @@
         this.authenticated = false;
 
         /**
+         * Selected mailbox
+         */
+        this.selectedMailbox = false;
+
+        /**
          * IMAP client object
          */
         this.client = new ImapClient(host, port, this.options);
@@ -148,6 +153,8 @@
     BrowserBox.prototype.onauth = function() {};
     BrowserBox.prototype.onupdate = function() {};
     /* BrowserBox.prototype.onerror = function(err){}; // not defined by default */
+    BrowserBox.prototype.onselectmailbox = function() {};
+    BrowserBox.prototype.onclosemailbox = function() {};
 
     // Event handlers
 
@@ -180,7 +187,7 @@
     BrowserBox.prototype._onReady = function() {
         clearTimeout(this._connectionTimeout);
         this.onlog('session', 'Connection established');
-        this.state = this.STATE_NOT_AUTHENTICATED;
+        this._changeState(this.STATE_NOT_AUTHENTICATED);
 
         this.updateCapability(function() {
             this.updateId(this.options.id, function() {
@@ -218,7 +225,7 @@
      * Initiate connection to the IMAP server
      */
     BrowserBox.prototype.connect = function() {
-        this.state = this.STATE_CONNECTING;
+        this._changeState(this.STATE_CONNECTING);
 
         // set timeout to fail connection establishing
         clearTimeout(this._connectionTimeout);
@@ -230,7 +237,7 @@
      * Close current connection
      */
     BrowserBox.prototype.close = function(callback) {
-        this.state = this.STATE_LOGOUT;
+        this._changeState(this.STATE_LOGOUT);
 
         this.exec('LOGOUT', function(err) {
             if (typeof callback === 'function') {
@@ -454,7 +461,7 @@
                 return next();
             }
 
-            this.state = this.STATE_AUTHENTICATED;
+            this._changeState(this.STATE_AUTHENTICATED);
             this.authenticated = true;
 
             // update post-auth capabilites
@@ -922,9 +929,19 @@
                 return next();
             }
 
-            this.state = this.STATE_SELECTED;
+            this._changeState(this.STATE_SELECTED);
 
-            callback(null, this._parseSELECT(response));
+            if (this.selectedMailbox && this.selectedMailbox !== path) {
+                this.onclosemailbox(this.selectedMailbox);
+            }
+
+            this.selectedMailbox = path;
+
+            var mailboxInfo = this._parseSELECT(response);
+
+            callback(null, mailboxInfo);
+
+            this.onselectmailbox(path, mailboxInfo);
 
             next();
         }.bind(this));
@@ -1625,6 +1642,25 @@
         }));
 
         return command;
+    };
+
+    /**
+     * Updates the IMAP state value for the current connection
+     *
+     * @param {Number} newState The state you want to change to
+     */
+    BrowserBox.prototype._changeState = function(newState) {
+        if (newState === this.state) {
+            return;
+        }
+
+        // if a mailbox was opened, emit onclosemailbox and clear selectedMailbox value
+        if (this.state === this.STATE_SELECTED && this.selectedMailbox) {
+            this.onclosemailbox(this.selectedMailbox);
+            this.selectedMailbox = false;
+        }
+
+        this.state = newState;
     };
 
     /**
