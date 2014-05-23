@@ -537,16 +537,14 @@ define(function(require) {
                     });
                     callback();
                 });
-                sinon.stub(br, 'exec', function(command, untagged, callback) {
+                sinon.stub(br, 'exec', function(command, callback) {
                     callback(null, 'abc', function() {});
                 });
-                sinon.stub(br, '_parseEXPUNGE');
             });
 
             afterEach(function() {
                 br.setFlags.restore();
                 br.exec.restore();
-                br._parseEXPUNGE.restore();
             });
 
             it('should call UID EXPUNGE', function() {
@@ -563,8 +561,6 @@ define(function(require) {
                         value: '1:2'
                     }]
                 });
-                expect(br.exec.args[0][1]).to.equal('EXPUNGE');
-                expect(br._parseEXPUNGE.withArgs('abc').callCount).to.equal(1);
             });
 
             it('should call EXPUNGE', function() {
@@ -575,8 +571,6 @@ define(function(require) {
 
                 expect(br.exec.callCount).to.equal(1);
                 expect(br.exec.args[0][0]).to.equal('EXPUNGE');
-                expect(br.exec.args[0][1]).to.equal('EXPUNGE');
-                expect(br._parseEXPUNGE.withArgs('abc').callCount).to.equal(1);
             });
         });
 
@@ -616,7 +610,6 @@ define(function(require) {
                 sinon.stub(br, 'exec', function(command, untagged, callback) {
                     callback(null, 'abc', done);
                 });
-                sinon.stub(br, '_parseEXPUNGE');
 
                 br.capability = ['MOVE'];
                 br.moveMessages('1:2', '[Gmail]/Trash', {
@@ -634,11 +627,9 @@ define(function(require) {
                         value: '[Gmail]/Trash'
                     }]
                 });
-                expect(br.exec.args[0][1]).to.deep.equal(['EXPUNGE', 'OK']);
-                expect(br._parseEXPUNGE.withArgs('abc').callCount).to.equal(1);
+                expect(br.exec.args[0][1]).to.deep.equal(['OK']);
 
                 br.exec.restore();
-                br._parseEXPUNGE.restore();
             });
 
             it('should fallback to copy+expunge', function() {
@@ -1308,20 +1299,6 @@ define(function(require) {
                         }]
                     }
                 })).to.deep.equal([]);
-            });
-        });
-
-        describe('#_parseEXPUNGE', function() {
-            it('should parse EXPUNGE response', function() {
-                expect(br._parseEXPUNGE({
-                    payload: {
-                        EXPUNGE: [{
-                            nr: 9
-                        }, {
-                            nr: 6
-                        }]
-                    }
-                })).to.deep.equal([9, 6]);
             });
         });
 
