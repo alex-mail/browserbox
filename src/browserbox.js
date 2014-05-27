@@ -525,7 +525,7 @@
                 attributes[0].push(id[key]);
             });
         } else {
-            attributes.push(null);
+            attributes[0] = null;
         }
 
         this.exec({
@@ -1555,7 +1555,16 @@
                 });
 
                 [].concat(query[key] || []).forEach(function(param) {
-                    param = escapeParam(param);
+                    switch (key.toLowerCase()) {
+                        case 'uid':
+                            param = {
+                                type: "sequence",
+                                value: param
+                            };
+                            break;
+                        default:
+                            param = escapeParam(param);
+                    }
                     if (param) {
                         params = params.concat(param || []);
                     }

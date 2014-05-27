@@ -356,6 +356,36 @@ define(function(require) {
                 });
             });
 
+            it('should send NIL', function(done) {
+                sinon.stub(br, 'exec', function(command, untagged, callback) {
+                    expect(command).to.deep.equal({
+                        command: 'ID',
+                        attributes: [
+                            null
+                        ]
+                    });
+
+                    callback(null, {
+                        payload: {
+                            ID: [{
+                                attributes: [
+                                    null
+                                ]
+                            }]
+                        }
+                    }, function() {
+                        br.exec.restore();
+                        done();
+                    });
+                });
+
+                br.capability = ['ID'];
+                br.updateId(null, function(err, id) {
+                    expect(err).to.not.exist;
+                    expect(id).to.deep.equal({});
+                });
+            });
+
             it('should exhange ID values', function(done) {
                 sinon.stub(br, 'exec', function(command, untagged, callback) {
                     expect(command).to.deep.equal({
@@ -1271,7 +1301,8 @@ define(function(require) {
                         seen: true
                     },
                     sentbefore: new Date(2011, 1, 3, 12, 0, 0),
-                    since: new Date(2011, 11, 23, 12, 0, 0)
+                    since: new Date(2011, 11, 23, 12, 0, 0),
+                    uid: '1:*'
                 }, {})).to.deep.equal({
                     command: 'SEARCH',
                     attributes: [{
@@ -1313,6 +1344,12 @@ define(function(require) {
                     }, {
                         'type': 'string',
                         'value': '23-Dec-2011'
+                    }, {
+                        'type': 'atom',
+                        'value': 'UID'
+                    }, {
+                        'type': 'sequence',
+                        'value': '1:*'
                     }]
                 });
             });
